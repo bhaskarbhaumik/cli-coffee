@@ -11,7 +11,7 @@ every panel through both implementations and diffs the styled output.
 ```
 ╭──────────  Computer Info ──────────╮ ╭──── 󰛳  Network Interfaces ────╮ ╭─────  Battery Status ─────╮ ╭──  Sunday, August 23, 2026 ──╮
 │  MacBook Pro [Mac16,8]             │ │ Interface Type │ en  │ IPv4   │ │  ╭──────────╮ │ Health    │ │  ▄▄▄▄▄ ▄▄▄▄▄   ▄▄▄▄▄ ▄   ▄   │
-│ 󰻾  Model.... Z1FE000NKLL/A         │ │ ───────────────┼─────┼─────── │ │  │████████  │ │ 󰂑 Good    │ │  █   █     █ ▄ █   █ █   █   │
+│ 󰻾  Model.... MXxxxLL/A             │ │ ───────────────┼─────┼─────── │ │  │████████  │ │ 󰂑 Good    │ │  █   █     █ ▄ █   █ █   █   │
 │   Chip..... Apple M4 Pro           │ │ Wi-Fi          │ en0 │ n/a    │ │  ╰──────────╯ │ 󱟠 100%    │ │ ————  U p t i m e  ————      │
 ╰────────────────────────────────────╯ ╰──────────────────────────────╯ ╰───────────────────────────╯ ╰──────────────────────────────╯
 ```

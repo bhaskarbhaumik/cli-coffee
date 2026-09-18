@@ -29,3 +29,6 @@ htmlcov/
 .idea/
 .vscode/
 *.swp
+
+# Agent / editor state
+.serena/
