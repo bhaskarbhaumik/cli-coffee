@@ -1,5 +1,14 @@
 # coffee
 
+[![CI](https://github.com/bhaskarbhaumik/cli-coffee/actions/workflows/ci.yml/badge.svg)](https://github.com/bhaskarbhaumik/cli-coffee/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/bhaskarbhaumik/cli-coffee?sort=semver)](https://github.com/bhaskarbhaumik/cli-coffee/releases)
+[![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+[![Python 3.14+](https://img.shields.io/badge/python-3.14%2B-blue.svg)](https://www.python.org/downloads/)
+[![macOS Apple Silicon](https://img.shields.io/badge/macOS-Apple%20Silicon-black?logo=apple)](https://support.apple.com/en-us/116943)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![Keep a Changelog](https://img.shields.io/badge/changelog-keep%20a%20changelog-E05735)](CHANGELOG.md)
+
 Keep an Apple Silicon Mac awake, with style.
 
 `coffee` draws a live terminal dashboard — machine identity, network interfaces,
@@ -170,6 +179,14 @@ make build            # wheel + sdist into dist/
 `~/Code/personal/coffee` and skips cleanly when that is absent; point
 `COFFEE_REFERENCE` elsewhere to override.
 
+`make hooks` installs the pre-commit hooks, and `make pre-commit` runs them all
+against every file. One of them is project-specific: `make glyphs` fails if a
+Nerd Font glyph is written as a literal character rather than a `\uXXXX`
+escape. Those are Private Use Area codepoints that no editor renders reliably,
+so a literal one can be mangled by a tool without anybody noticing — which
+would change the display invisibly. Run
+`python3 scripts/check_glyph_escapes.py --fix` to convert them.
+
 ### Layout
 
 | module         | what it owns                                             |
@@ -189,13 +206,32 @@ make build            # wheel + sdist into dist/
 ### Repository management
 
 ```sh
-make repo             # create the private GitHub repo and wire up origin
+make repo             # create the GitHub repo and wire up origin
 make commit MSG="…"   # stage everything and commit
 make push             # push, setting upstream on the first push
 make status           # git status plus the current remote
+make tag              # tag v$(VERSION) and push the tag
 make release          # test, build, tag and publish a GitHub release
 ```
 
+Two workflows run on every push and pull request: `ci` lints on Linux, then
+compiles, tests, smoke-runs and builds on an Apple Silicon macOS runner.
+`release` builds and publishes artefacts when a `v*` tag is pushed, after
+checking that the tag, `pyproject.toml`, `VERSION.md` and `CHANGELOG.md` all
+agree.
+
+## Project documents
+
+| document                                     | what it covers                              |
+| -------------------------------------------- | ------------------------------------------- |
+| [CHANGELOG.md](CHANGELOG.md)                 | what changed in each release                |
+| [VERSION.md](VERSION.md)                     | the versioning scheme and how to cut a release |
+| [CONTRIBUTING.md](CONTRIBUTING.md)           | setup, house style, and the one rule        |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)     | Contributor Covenant 2.1                    |
+| [SECURITY.md](SECURITY.md)                   | threat model and how to report a vulnerability |
+| [AUTHORS.md](AUTHORS.md)                     | who wrote it                                |
+| [CITATION.cff](CITATION.cff)                 | how to cite it                              |
+
 ## Licence
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE). Copyright © 2025 Bhaskar Bhaumik.

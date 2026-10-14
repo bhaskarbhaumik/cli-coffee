@@ -22,6 +22,8 @@ DIST_NAME      := cli_coffee
 TOOL_NAME      := cli-coffee
 SRC_DIR        := src/$(PKG)
 TEST_DIR       := tests
+SCRIPT_DIR     := scripts
+PY_PATHS        = $(SRC_DIR) $(TEST_DIR) $(SCRIPT_DIR)
 VERSION        := $(shell sed -n 's/^version *= *"\(.*\)"/\1/p' pyproject.toml | head -1)
 DESCRIPTION    := Keep an Apple Silicon Mac awake, with style
 
@@ -30,6 +32,12 @@ DESCRIPTION    := Keep an Apple Silicon Mac awake, with style
 DESTDIR        ?= $(HOME)/.local/bin
 UV             ?= uv
 PYTHON_VERSION ?= 3.14
+# Pinned deliberately. ruff 0.15.0 through at least 0.17.0 rewrite
+#   except (A, B):   ->   except A, B:
+# which is Python 2 syntax and does not parse. 0.14.0 is the last release
+# that formats this project correctly; `make fmt` byte-compiles afterwards
+# so a regression here can never be committed silently.
+RUFF           ?= ruff==0.14.0
 TOOL_BIN       := $(HOME)/.local/share/uv/tools/$(TOOL_NAME)/bin/$(NAME)
 INSTALLED      := $(DESTDIR)/$(NAME)
 
@@ -71,7 +79,8 @@ endef
 .PHONY: help version info \
         venv sync build clean distclean \
         install install-symlink uninstall reinstall verify \
-        lint fmt check smoke parity pytest test demo \
+        lint fmt check glyphs version-check smoke parity pytest test demo \
+        hooks pre-commit changelog \
         repo remote commit push pull status tag release ci
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -187,12 +196,40 @@ verify: ## Check that the installed coffee works and is on PATH
 #  Quality
 # ══════════════════════════════════════════════════════════════════════════════
 
-lint: ## Lint with ruff
-	@$(UV) run --with ruff ruff check $(SRC_DIR) $(TEST_DIR)
+lint: glyphs ## Lint with ruff
+	@$(UV) run --no-project --with $(RUFF) ruff check $(PY_PATHS)
+	@$(UV) run --no-project --with $(RUFF) ruff format --check $(PY_PATHS)
 
-fmt: ## Format with ruff
-	@$(UV) run --with ruff ruff format $(SRC_DIR) $(TEST_DIR)
-	@$(UV) run --with ruff ruff check --fix $(SRC_DIR) $(TEST_DIR)
+fmt: ## Format with ruff, then prove the result still parses
+	@$(UV) run --no-project --with $(RUFF) ruff format $(PY_PATHS)
+	@$(UV) run --no-project --with $(RUFF) ruff check --fix $(PY_PATHS)
+	@$(MAKE) --no-print-directory check
+
+glyphs: ## Check that Nerd Font glyphs are written as escapes, not literals
+	@python3 $(SCRIPT_DIR)/check_glyph_escapes.py
+	$(call ok,"no literal Private Use Area glyphs in source")
+
+version-check: ## VERSION.md, CITATION.cff and pyproject.toml agree
+	@doc=$$(sed -n 's/^\*\*Current version: `\(.*\)`\*\*/\1/p' VERSION.md | head -1); \
+	cff=$$(sed -n 's/^version: *\(.*\)$$/\1/p' CITATION.cff | head -1); \
+	fail=0; \
+	if [ "$$doc" != "$(VERSION)" ]; then \
+	    printf "$(C_ERR)$(CROSS)$(C_RST) VERSION.md says '%s', pyproject.toml says '%s'\n" "$$doc" "$(VERSION)"; \
+	    fail=1; \
+	fi; \
+	if [ "$$cff" != "$(VERSION)" ]; then \
+	    printf "$(C_ERR)$(CROSS)$(C_RST) CITATION.cff says '%s', pyproject.toml says '%s'\n" "$$cff" "$(VERSION)"; \
+	    fail=1; \
+	fi; \
+	if [ $$fail -ne 0 ]; then exit 1; fi; \
+	printf "$(C_OK)$(TICK)$(C_RST) version %s everywhere\n" "$(VERSION)"
+
+hooks: ## Install the pre-commit hooks into .git/hooks
+	@$(UV) run --no-project --with pre-commit pre-commit install --install-hooks
+	$(call ok,"pre-commit hooks installed")
+
+pre-commit: ## Run every pre-commit hook against every file
+	@$(UV) run --no-project --with pre-commit pre-commit run --all-files
 
 check: ## Byte-compile every module (catches syntax errors fast)
 	@$(UV) run --python $(PYTHON_VERSION) --no-project python -m compileall -q $(SRC_DIR)
@@ -214,7 +251,7 @@ parity: ## Diff every panel against the reference implementation, if it is prese
 	@$(UV) run --project . --python $(PYTHON_VERSION) --with pytest \
 	    pytest -q $(TEST_DIR)/test_parity.py -rs
 
-test: check pytest smoke ## Run every check
+test: version-check check pytest smoke ## Run every check
 
 ci: lint test ## Lint and test, the way CI would
 

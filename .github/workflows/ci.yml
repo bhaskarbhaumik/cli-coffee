@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags-ignore: ["**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.14"
+  # Pinned: ruff >=0.15.0 rewrites `except (A, B):` into invalid syntax.
+  # See the note in the Makefile before bumping.
+  RUFF: "ruff==0.14.0"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: ruff check
+        run: uv run --no-project --with ${{ env.RUFF }} ruff check src/coffee tests scripts
+
+      - name: ruff format --check
+        run: uv run --no-project --with ${{ env.RUFF }} ruff format --check src/coffee tests scripts
+
+      - name: VERSION.md agrees with pyproject.toml
+        run: make version-check
+
+      - name: Nerd Font glyphs are written as escapes
+        run: python3 scripts/check_glyph_escapes.py
+
+  test:
+    name: Test (macOS, Apple Silicon)
+    # coffee shells out to system_profiler, pmset and caffeinate, so the tests
+    # and the smoke run only mean anything on a real macOS runner.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install Python ${{ env.PYTHON_VERSION }}
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Report the runner
+        run: |
+          uname -sm
+          sw_vers || true
+
+      - name: Byte-compile every module
+        run: make check
+
+      - name: Unit tests
+        # The parity suite needs the original single-file script, which is not
+        # vendored; those cases skip here and are reported with -rs.
+        run: uv run --project . --python ${{ env.PYTHON_VERSION }} --with pytest pytest -q tests -rs
+
+      - name: Smoke the read-only sub-commands
+        run: make smoke
+
+      - name: Build wheel and sdist
+        run: uv build --out-dir dist
+
+      - name: Install the wheel and run it
+        run: |
+          uv tool install --force --python ${{ env.PYTHON_VERSION }} dist/cli_coffee-*.whl
+          "$HOME/.local/bin/coffee" --version
+          "$HOME/.local/bin/coffee" doctor
+          "$HOME/.local/bin/coffee" show --rows > /dev/null
+
+      - name: Upload artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/bhaskarbhaumik/cli-coffee/security/advisories/new
+    about: Report privately. Please do not open a public issue for anything security-shaped.
+  - name: Question or idea
+    url: https://github.com/bhaskarbhaumik/cli-coffee/discussions
+    about: For anything that is not clearly a bug or a concrete proposal.
+  - name: Contributing guide
+    url: https://github.com/bhaskarbhaumik/cli-coffee/blob/main/CONTRIBUTING.md
+    about: Setup, house style, and the one rule about the display.

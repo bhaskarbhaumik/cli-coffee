@@ -1,0 +1,94 @@
+name: Bug report
+description: Something in coffee does not work the way it should
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report.
+
+        If this is a **security** issue, please close this and use
+        [private vulnerability reporting](https://github.com/bhaskarbhaumik/cli-coffee/security/advisories/new)
+        instead — see [SECURITY.md](https://github.com/bhaskarbhaumik/cli-coffee/blob/main/SECURITY.md).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+      placeholder: |
+        Ran `coffee power off` after `coffee power on` and it reported no snapshot,
+        even though ~/.local/state/coffee/pmset-snapshot.json exists.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The shortest sequence that shows the problem.
+      placeholder: |
+        1. coffee power on
+        2. coffee power off
+        3. ...
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: "`coffee doctor` output"
+      description: >-
+        The single most useful thing you can paste — it reports the platform,
+        the escalation backend, which system tools are present, and the config
+        state. Pasted as-is; it is automatically formatted as code.
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "`coffee --version`"
+      placeholder: coffee 0.1.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: How did you install it?
+      options:
+        - make install (uv tool)
+        - make install-symlink (from a checkout)
+        - running from source (uv run / python -m coffee)
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Error output
+      description: Any traceback or error text. Leave blank if there was none.
+      render: text
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: >-
+        Your `~/.config/coffee/config.toml`, if you have one.
+        `coffee config show` prints it.
+      render: toml
+
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: Anything else
+      description: Terminal emulator, font, unusual hardware, whatever seems relevant.

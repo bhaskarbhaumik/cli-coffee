@@ -769,17 +769,16 @@ def cmd_doctor(ctx: Context, args: argparse.Namespace) -> int:
 
     rep = ctx.escalator.report()
     rows.append(("root escalation", rep.backend is not Backend.NONE, rep.detail))
-    rows.append(
-        (
-            "xlog",
-            rep.xlog_works if rep.xlog_present else False,
-            f"{XLOG} runs commands as uid 0"
-            if rep.xlog_works
-            else (
-                f"{XLOG} present but not usable" if rep.xlog_present else f"{XLOG} not installed"
-            ),
-        )
-    )
+    # Not having xlog is not a failure — sudo is a supported backend, and
+    # "root escalation" above already reports whether either one works. Only a
+    # present-but-broken xlog is worth a cross.
+    if rep.xlog_works:
+        xlog_row = (True, f"{XLOG} runs commands as uid 0")
+    elif rep.xlog_present:
+        xlog_row = (False, f"{XLOG} present but not usable")
+    else:
+        xlog_row = (None, f"{XLOG} not installed — falling back to sudo")
+    rows.append(("xlog", *xlog_row))
     rows.append(
         ("sudo", rep.sudo_present, f"{SUDO} present" if rep.sudo_present else f"{SUDO} missing")
     )

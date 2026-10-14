@@ -277,9 +277,9 @@ def get_power_visual(
     )
 
     battery_icon = (
-        f"[{palette.status_error}][/{palette.status_error}]"
+        f"[{palette.status_error}]\uf071[/{palette.status_error}]"
         if battery_warning
-        else f"[{palette.status_success}][/{palette.status_success}]"
+        else f"[{palette.status_success}]\uf05a[/{palette.status_success}]"
     )
     battery_info = get_bar(battery_percent, height, is_charging=battery_charging)
 
@@ -314,7 +314,7 @@ def get_power_visual(
         f"{battery_info}\n[{palette.border_primary}]{'─' * rule_width}[/{palette.border_primary}]\n"
     )
     power_updated += (
-        f"[{palette.accent_yellow}][/{palette.accent_yellow}] [bold]Last Updated[/bold]\n"
+        f"[{palette.accent_yellow}]\ueb7c[/{palette.accent_yellow}] [bold]Last Updated[/bold]\n"
         f"  [{palette.text_dim}]{ts}[/{palette.text_dim}]"
     )
 
@@ -347,7 +347,7 @@ def get_power_visual(
     )
 
     battery_health_info_str = (
-        f"[{palette.accent_yellow}][/{palette.accent_yellow}] [bold]Battery Health[/bold]\n"
+        f"[{palette.accent_yellow}]\uf0f1[/{palette.accent_yellow}] [bold]Battery Health[/bold]\n"
         f"  [dim][{palette.accent_blue}]\U000f0091[/{palette.accent_blue}] Status........[/dim]"
         f"{health_status_display}\n"
         f"  [dim][{palette.accent_blue}]\U000f17e0[/{palette.accent_blue}] Max Capacity..[/dim]"
@@ -369,10 +369,10 @@ def get_power_visual(
     charger_watts = safe_get(power_info, "ac_charger", "sppower_ac_charger_watts", default="N/A")
 
     ac_charger_info = (
-        f"[{palette.accent_yellow}][/{palette.accent_yellow}] [bold]AC Charger[/bold]\n"
+        f"[{palette.accent_yellow}]\ueb2d[/{palette.accent_yellow}] [bold]AC Charger[/bold]\n"
         f"  [dim][{palette.accent_blue}]\U000f0425[/{palette.accent_blue}] Connected?..[/dim] "
         f"{charger_status}\n"
-        f"  [dim][{palette.accent_blue}][/{palette.accent_blue}] Wattage.....[/dim] "
+        f"  [dim][{palette.accent_blue}]\uf0e7[/{palette.accent_blue}] Wattage.....[/dim] "
         f"[{palette.accent_magenta}]{charger_watts} Watts[/{palette.accent_magenta}]"
     )
 
@@ -391,7 +391,7 @@ def get_power_visual(
 
     return Panel(
         battery_table,
-        title=f"[{palette.text_highlight}][/{palette.text_highlight}]  "
+        title=f"[{palette.text_highlight}]\uf242[/{palette.text_highlight}]  "
         f"[{palette.accent_green}]Battery Status[/{palette.accent_green}]",
         border_style=palette.border_primary,
         padding=(0, 1),

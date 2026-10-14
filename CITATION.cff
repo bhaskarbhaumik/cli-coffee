@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "coffee"
+abstract: >-
+  A userspace command-line tool for Apple Silicon macOS that renders a live
+  terminal dashboard of machine identity, network interfaces, battery health
+  and the time, and holds the machine awake for as long as it runs.
+type: software
+authors:
+  - family-names: Bhaumik
+    given-names: Bhaskar
+    alias: bhaskarbhaumik
+    email: 4145672+bhaskarbhaumik@users.noreply.github.com
+repository-code: "https://github.com/bhaskarbhaumik/cli-coffee"
+url: "https://github.com/bhaskarbhaumik/cli-coffee"
+license: MIT
+version: 0.1.0
+date-released: "2026-08-23"
+keywords:
+  - macos
+  - apple-silicon
+  - cli
+  - terminal
+  - dashboard
+  - caffeinate
+  - pmset
+  - python
+  - rich

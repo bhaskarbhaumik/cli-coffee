@@ -1,0 +1,75 @@
+name: Feature request
+description: Suggest something coffee should be able to do
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        `coffee` is deliberately small and single-purpose. The most likely
+        answer to a feature request is "that is a different tool" — which is
+        not a brush-off, just the scope. Proposals that fit the existing shape
+        (a new panel, a new `power` action, a config key) land much more easily
+        than ones that change what the tool is.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that coffee makes hard or impossible?
+      placeholder: >-
+        I run coffee on a machine with a UPS, and there is no way to see its
+        state without dropping to `pmset -g ups`.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you have in mind
+      description: >-
+        If it is a new command or flag, write out the invocation. If it is a
+        new panel, sketch it.
+      placeholder: |
+        coffee show ups
+        coffee power status --ups
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of coffee does this touch?
+      options:
+        - a panel (computer / network / power / time / splash)
+        - a new panel
+        - the power sub-command (pmset)
+        - configuration
+        - theming
+        - packaging, install or the Makefile
+        - something else
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: display
+    attributes:
+      label: Display impact
+      description: >-
+        The rendered output of the existing panels is a hard contract, enforced
+        by the parity suite. See
+        [CONTRIBUTING.md](https://github.com/bhaskarbhaumik/cli-coffee/blob/main/CONTRIBUTING.md).
+      options:
+        - label: This would change how an existing panel looks.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried instead
+      description: Workarounds, other tools, or why those do not work.
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Would you like to implement it?
+      options:
+        - label: I would be willing to open a pull request for this.

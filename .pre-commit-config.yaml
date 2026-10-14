@@ -1,0 +1,48 @@
+# Install with `make hooks`; run against everything with `make pre-commit`.
+default_language_version:
+  python: python3.14
+
+exclude: '^etc/.*\.aa$'  # ASCII art — whitespace is the picture
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.0
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: version-check
+        name: VERSION.md agrees with pyproject.toml
+        entry: make version-check
+        language: system
+        pass_filenames: false
+        files: '^(VERSION\.md|pyproject\.toml)$'
+
+      - id: no-literal-nerd-glyphs
+        name: Nerd Font glyphs are written as escapes
+        description: >-
+          Private-use codepoints must appear as \uXXXX / \UXXXXXXXX in source,
+          so a transcription slip cannot silently change the display.
+        entry: python3 scripts/check_glyph_escapes.py
+        language: system
+        types: [python]
+        files: '^src/coffee/.*\.py$'

@@ -230,22 +230,22 @@ def get_computer_panel(computer_info: dict[str, Any] | None = None) -> Panel:
     # codepoints that no editor renders reliably, and a silent transcription
     # slip would quietly change what the panel looks like.
     left_content = (
-        f"[{blue}][/{blue}]  {machine_name} "
+        f"[{blue}]\uf109[/{blue}]  {machine_name} "
         f"[{palette.text_dim}][{machine_model}][/{palette.text_dim}]\n"
         f"[{blue}]\U000f0efe[/{blue}]  [dim]Model....[/dim] [{magenta}]{model_number}[/{magenta}]\n"
-        f"[{blue}][/{blue}]  [dim]Serial...[/dim] [{magenta}]{serial_number}[/{magenta}]\n"
-        f"[{blue}][/{blue}]  [dim]Firmware.[/dim] [{magenta}]{boot_rom_version}[/{magenta}]\n"
+        f"[{blue}]\uf02a[/{blue}]  [dim]Serial...[/dim] [{magenta}]{serial_number}[/{magenta}]\n"
+        f"[{blue}]\ueabe[/{blue}]  [dim]Firmware.[/dim] [{magenta}]{boot_rom_version}[/{magenta}]\n"
         f"[{blue}]\U000f1913[/{blue}]  [dim]Chip.....[/dim] [{magenta}]{chip_type}[/{magenta}]\n"
-        f"[{blue}][/{blue}]  [dim]CPU......[/dim] [{magenta}]{cpu_display}[/{magenta}]\n"
+        f"[{blue}]\uf4bc[/{blue}]  [dim]CPU......[/dim] [{magenta}]{cpu_display}[/{magenta}]\n"
         f"[{blue}]\U000f0697[/{blue}]  [dim]Kernel...[/dim] [{magenta}]{kernel_version}[/{magenta}]\n"
-        f"[{blue}][/{blue}]  [dim]OS.......[/dim] [{magenta}]{os_version}[/{magenta}]"
+        f"[{blue}]\ue711[/{blue}]  [dim]OS.......[/dim] [{magenta}]{os_version}[/{magenta}]"
     )
 
     right_content = (
         f"[{blue}]\U000f035b[/{blue}]  [dim]Memory.[/dim] "
         f"[{magenta}]{physical_memory} ({memory_type})[/{magenta}]\n"
-        f"[{blue}][/{blue}]  [dim]Host...[/dim] [{magenta}]{host_name}[/{magenta}]\n"
-        f"[{blue}][/{blue}]  [dim]User...[/dim] [{magenta}]{user_name}[/{magenta}]\n"
+        f"[{blue}]\uf4d8[/{blue}]  [dim]Host...[/dim] [{magenta}]{host_name}[/{magenta}]\n"
+        f"[{blue}]\uf007[/{blue}]  [dim]User...[/dim] [{magenta}]{user_name}[/{magenta}]\n"
         f"[{blue}]\U000f0342[/{blue}]  [dim]Login..[/dim] [{magenta}]{login_name}[/{magenta}]\n"
         f"[{blue}]\U000f01bc[/{blue}]  [dim]Disk...[/dim] "
         f"[{magenta}]{disk_type} ({disk_filesystem})[/{magenta}]\n"
