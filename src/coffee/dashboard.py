@@ -8,22 +8,23 @@ Layout and cadence are the visual contract:
   because both cost a ``system_profiler`` call;
 * the theme is re-checked every 5 seconds, and a change rebuilds every panel.
 
-Press any key to quit.
+Hotkeys (see :mod:`coffee.keys`): ``r`` refreshes every panel, ``q`` or
+``Esc`` quits, and any other key floats a hotkey help popup over the panels
+until ``Esc`` closes it. With no popup open, the frame is exactly the
+four-column layout above.
 """
 
 from __future__ import annotations
 
 import contextlib
 import os
+import queue
 import signal
 import subprocess
-import sys
-import termios
 import threading
 import time
-import tty
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
@@ -31,20 +32,22 @@ import psutil
 import pytz
 from rich.align import Align
 from rich.columns import Columns
-from rich.console import Console
+from rich.console import Console, RenderableType
 from rich.live import Live
 from rich.panel import Panel
 
 from coffee.clock import build_time_panel
 from coffee.computer import get_computer_panel, regenerate_computer_cache
 from coffee.context import Context
+from coffee.keys import Action, KeyboardWatcher
 from coffee.network import get_network_panel
+from coffee.overlay import Overlay, hotkey_help_panel
 from coffee.pmset import apply_awake_settings
 from coffee.power import get_power_data, get_power_visual
 from coffee.splash import get_splash_panel
 from coffee.theme import refresh_theme
 
-__all__ = ["SECONDS_PER_YEAR", "Dashboard", "KeyboardWatcher", "run_dashboard"]
+__all__ = ["SECONDS_PER_YEAR", "Action", "Dashboard", "KeyboardWatcher", "run_dashboard"]
 
 SECONDS_PER_YEAR = 31_536_000
 SLEEP_INTERVAL = 0.4
@@ -52,65 +55,18 @@ CAFFEINATE_FLAGS = ["-dimsu", "-t", str(SECONDS_PER_YEAR)]
 _CAFFEINATE_GRACE = 2.0
 
 
-class KeyboardWatcher:
-    """Sets an event as soon as any key is pressed.
+@dataclass(slots=True)
+class _Screen:
+    """The panels currently on screen, and when the expensive ones were fetched."""
 
-    The terminal attributes are captured on the calling thread, *before* the
-    reader starts, so :meth:`restore` can always put the tty back — including
-    when the process is interrupted while the reader is still blocked in
-    ``read()`` and never gets to clean up after itself.
-    """
-
-    __slots__ = ("_event", "_fd", "_saved", "_thread")
-
-    def __init__(self, event: threading.Event) -> None:
-        self._event = event
-        self._fd: int | None = None
-        self._saved: list[Any] | None = None
-        self._thread: threading.Thread | None = None
-
-    @property
-    def active(self) -> bool:
-        """Whether a reader thread is running."""
-        return self._thread is not None
-
-    def start(self) -> bool:
-        """Put the tty in cbreak mode and start watching. False if stdin is not a tty."""
-        try:
-            fd = sys.stdin.fileno()
-            saved = termios.tcgetattr(fd)
-        except (ValueError, OSError, termios.error):
-            return False
-
-        self._fd, self._saved = fd, saved
-        try:
-            tty.setcbreak(fd)
-        except (OSError, termios.error):
-            self._fd, self._saved = None, None
-            return False
-
-        self._thread = threading.Thread(target=self._read, name="coffee-keys", daemon=True)
-        self._thread.start()
-        return True
-
-    def _read(self) -> None:
-        try:
-            sys.stdin.read(1)
-        except (OSError, ValueError):
-            pass
-        finally:
-            self._event.set()
-
-    def restore(self) -> None:
-        """Put the terminal back the way it was. Safe to call more than once."""
-        if self._fd is None or self._saved is None:
-            return
-        try:
-            termios.tcsetattr(self._fd, termios.TCSADRAIN, self._saved)
-        except (OSError, termios.error):
-            pass
-        finally:
-            self._fd, self._saved = None, None
+    computer_data: dict[str, Any]
+    leading: Panel
+    power: Panel
+    network: Panel
+    last_power_update: float
+    last_network_update: float
+    time: Panel | None = None
+    help: bool = False
 
 
 @dataclass(slots=True)
@@ -130,11 +86,8 @@ class Dashboard:
     caffeinate: bool
     use_splash: bool = False
 
-    _stop: threading.Event = None  # type: ignore[assignment]
-
-    def __post_init__(self) -> None:
-        if self._stop is None:
-            self._stop = threading.Event()
+    _stop: threading.Event = field(default_factory=threading.Event)
+    _actions: queue.SimpleQueue[Action] = field(default_factory=queue.SimpleQueue)
 
     # ── side effects ─────────────────────────────────────────────────────────
     def stop(self) -> None:
@@ -193,9 +146,9 @@ class Dashboard:
             self.ctx.warn(f"⚠️  Error while fetching {label}: {exc}")
             return Panel(error, border_style="red")
 
-    def power_panel(self) -> Panel:
+    def power_panel(self, *, force: bool = False) -> Panel:
         return self._safe_panel(
-            lambda: get_power_visual(get_power_data()),
+            lambda: get_power_visual(get_power_data(force=force)),
             "power visual",
             "⚠️  Error fetching power data",
         )
@@ -219,10 +172,71 @@ class Dashboard:
             "⚠️  Error fetching computer data",
         )
 
+    def leading_panel(self, computer_data: dict[str, Any]) -> Panel:
+        """The first column: the splash image or the computer panel."""
+        return self.splash_panel() if self.use_splash else self.computer_panel(computer_data)
+
+    def collect_computer_data(self) -> dict[str, Any]:
+        """Run ``system_profiler`` for the computer panel; ``{}`` if it fails."""
+        try:
+            return regenerate_computer_cache()
+        except Exception as exc:
+            self.ctx.warn(f"⚠️  Error while collecting computer info: {exc}")
+            return {}
+
+    # ── hotkeys ──────────────────────────────────────────────────────────────
+    def refresh_all(self, screen: _Screen) -> None:
+        """Re-fetch every panel now, bypassing the caches and the timers."""
+        refresh_theme()
+        now = time.time()
+        screen.computer_data = self.collect_computer_data()
+        screen.leading = self.leading_panel(screen.computer_data)
+        screen.power = self.power_panel(force=True)
+        screen.network = self.network_panel()
+        screen.last_power_update = now
+        screen.last_network_update = now
+
+    def handle(self, action: Action, screen: _Screen) -> None:
+        """Apply one hotkey to *screen*, or ask the loop to stop."""
+        if action is Action.QUIT:
+            self._stop.set()
+        elif action is Action.ESCAPE:
+            if screen.help:
+                screen.help = False
+            else:
+                self._stop.set()
+        elif action is Action.REFRESH:
+            self.refresh_all(screen)
+        else:
+            screen.help = True
+
+    def frame(self, screen: _Screen) -> RenderableType:
+        """The renderable for *screen*: the four columns, plus the popup if open."""
+        panels = [screen.leading, screen.network, screen.power]
+        if screen.time is not None:
+            panels.append(screen.time)
+        dashboard = Align.right(Columns(panels))
+        return Overlay(dashboard, hotkey_help_panel()) if screen.help else dashboard
+
+    def _idle(self, seconds: float, screen: _Screen, live: Live) -> None:
+        """Wait out one beat, acting on — and redrawing for — any hotkeys."""
+        deadline = time.monotonic() + seconds
+        while not self._stop.is_set():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return
+            try:
+                action = self._actions.get(timeout=remaining)
+            except queue.Empty:
+                return
+            self.handle(action, screen)
+            if not self._stop.is_set():
+                live.update(self.frame(screen), refresh=True)
+
     # ── the loop ─────────────────────────────────────────────────────────────
     def run(self) -> int:
-        """Draw until a key is pressed, the process is signalled, or a panel dies."""
-        keys = KeyboardWatcher(self._stop)
+        """Draw until ``q``/``Esc`` is pressed, the process is signalled, or a panel dies."""
+        keys = KeyboardWatcher(self._actions.put)
         keys.start()
         restore_signals = self._install_signal_handlers()
         caffeinate_process: subprocess.Popen[bytes] | None = None
@@ -233,26 +247,24 @@ class Dashboard:
             if self.caffeinate:
                 caffeinate_process = self.start_caffeinate()
 
-            # Hardware facts do not change under us; fetch them once.
-            try:
-                computer_data = regenerate_computer_cache()
-            except Exception as exc:
-                self.ctx.warn(f"⚠️  Error while collecting computer info: {exc}")
-                computer_data = {}
+            # Hardware facts do not change under us; fetch them once (or on `r`).
+            computer_data = self.collect_computer_data()
 
             if self.clear_screen:
                 self.console.clear()
 
-            leading = self.splash_panel() if self.use_splash else self.computer_panel(computer_data)
-            panel_power = self.power_panel()
-            panel_network = self.network_panel()
-
             beats = 0
             ct = time.time()
+            screen = _Screen(
+                computer_data=computer_data,
+                leading=self.leading_panel(computer_data),
+                power=self.power_panel(),
+                network=self.network_panel(),
+                last_power_update=ct,
+                last_network_update=ct,
+            )
             process = psutil.Process(os.getpid())
             memory_mb = process.memory_info().rss / 1024**2
-            last_power_update = ct
-            last_network_update = ct
             last_theme_check = ct
 
             primary = pytz.timezone(self.tz)
@@ -281,16 +293,12 @@ class Dashboard:
                                     # panels, so they all have to be rebuilt.
                                     if self.clear_screen:
                                         self.console.clear()
-                                    leading = (
-                                        self.splash_panel()
-                                        if self.use_splash
-                                        else self.computer_panel(computer_data)
-                                    )
-                                    panel_power = self.power_panel()
-                                    panel_network = self.network_panel()
+                                    screen.leading = self.leading_panel(screen.computer_data)
+                                    screen.power = self.power_panel()
+                                    screen.network = self.network_panel()
 
                         now = datetime.now(primary)
-                        panel_time = build_time_panel(
+                        screen.time = build_time_panel(
                             now=now,
                             secondary=now.astimezone(secondary),
                             up_for=ct - boot_time,
@@ -298,19 +306,16 @@ class Dashboard:
                             tz=self.tz,
                         )
 
-                        if ct - last_power_update >= self.power_interval:
-                            last_power_update = ct
-                            panel_power = self.power_panel()
+                        if ct - screen.last_power_update >= self.power_interval:
+                            screen.last_power_update = ct
+                            screen.power = self.power_panel()
 
-                        if ct - last_network_update >= self.network_interval:
-                            last_network_update = ct
-                            panel_network = self.network_panel()
+                        if ct - screen.last_network_update >= self.network_interval:
+                            screen.last_network_update = ct
+                            screen.network = self.network_panel()
 
-                        live.update(
-                            Align.right(Columns([leading, panel_network, panel_power, panel_time])),
-                            refresh=True,
-                        )
-                        time.sleep(SLEEP_INTERVAL)
+                        live.update(self.frame(screen), refresh=True)
+                        self._idle(SLEEP_INTERVAL, screen, live)
                         beats += 1
                     except KeyboardInterrupt:
                         self._stop.set()

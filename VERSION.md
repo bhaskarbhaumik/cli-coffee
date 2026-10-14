@@ -1,6 +1,6 @@
 # Version
 
-**Current version: `0.1.0`**
+**Current version: `0.2.0`**
 
 ## Where the version lives
 
@@ -8,7 +8,7 @@
 
 ```toml
 [project]
-version = "0.1.0"
+version = "0.2.0"
 ```
 
 Everything else reads from it:

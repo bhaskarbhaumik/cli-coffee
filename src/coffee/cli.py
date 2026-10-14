@@ -44,7 +44,7 @@ PANELS = ("computer", "network", "power", "time", "splash")
 
 EPILOG = """\
 Examples:
-  coffee                       the live dashboard — press any key to quit
+  coffee                       the live dashboard — r refresh, q/Esc quit, other keys: help
   coffee run --tz UTC          the dashboard, on UTC
   coffee show power network    render single panels once and exit
   coffee power status          what pmset currently says
@@ -828,9 +828,9 @@ def cmd_doctor(ctx: Context, args: argparse.Namespace) -> int:
         (
             "terminal",
             True if stdin_tty else None,
-            "interactive — press any key to quit the dashboard"
+            "interactive — dashboard hotkeys: r refresh, q/Esc quit, any other key for help"
             if stdin_tty
-            else "stdin is not a tty; the dashboard cannot be quit with a keypress",
+            else "stdin is not a tty; the dashboard's hotkeys will not work",
         )
     )
 

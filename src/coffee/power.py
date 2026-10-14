@@ -150,11 +150,11 @@ class PowerManager:
             power[key] = entry
         return power
 
-    def get_power_data(self) -> dict[str, Any]:
-        """Power data, from the cache when it is fresh enough."""
+    def get_power_data(self, *, force: bool = False) -> dict[str, Any]:
+        """Power data, from the cache when it is fresh enough — or always fresh with *force*."""
         global cache_mtime
 
-        if not self.is_cache_stale():
+        if not force and not self.is_cache_stale():
             return self.get_cache()
 
         power_info = self.get_power_info()
@@ -405,9 +405,9 @@ def is_mac() -> bool:
     return PowerManager.is_mac()
 
 
-def get_power_data() -> dict[str, Any]:
+def get_power_data(*, force: bool = False) -> dict[str, Any]:
     """Power data via a throwaway :class:`PowerManager`."""
-    return PowerManager().get_power_data()
+    return PowerManager().get_power_data(force=force)
 
 
 def get_power_panel(height: int = 1) -> Panel:

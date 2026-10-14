@@ -9,8 +9,18 @@ surface and the rendered display, not the Python modules.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-13
+
 ### Added
 
+- **Dashboard hotkeys.** `r`/`R` refreshes every panel immediately, bypassing
+  the battery cache and the refresh timers. `q`/`Q` quits. Any other key floats
+  a hotkey help popup over the centre of the panels; `Esc` closes it, or quits
+  when no popup is open. Arrow and function keys (escape *sequences*) and
+  Alt+key are told apart from a bare `Esc`, so they open the help instead of
+  quitting. The README lists the keys.
+- `coffee.keys` (key decoding and the reader thread) and `coffee.overlay`
+  (the popup, and a renderable that composites it over the dashboard).
 - `AUTHORS.md`, `VERSION.md` and this changelog.
 - Contributor documentation: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`
   (Contributor Covenant 2.1) and `SECURITY.md`, with private vulnerability
@@ -40,6 +50,14 @@ surface and the rendered display, not the Python modules.
 
 ### Changed
 
+- **Only `q`, `Q` and `Esc` quit the dashboard.** Previously any key did; a
+  stray keypress now opens the help instead of ending the session. `Ctrl-C`
+  and `SIGTERM` still quit. With no popup open, the display is unchanged.
+- The keyboard reader stops when the dashboard exits instead of being left
+  blocked in `read()`, so it can no longer swallow the first keystroke typed
+  at the shell afterwards.
+- `coffee doctor` and `--help` describe the hotkeys rather than "press any key
+  to quit".
 - `README.md` now opens with status badges and points at the new documents.
 - The fourteen glyphs still written as literals in `computer.py` and `power.py`
   are now escapes. Purely textual: decoding the escapes reproduces the previous
@@ -117,5 +135,6 @@ panel through both implementations and diffs the styled output byte for byte.
   shell.
 - Every subprocess runs with an explicit timeout and `stdin=DEVNULL`.
 
-[Unreleased]: https://github.com/bhaskarbhaumik/cli-coffee/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/bhaskarbhaumik/cli-coffee/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/bhaskarbhaumik/cli-coffee/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/bhaskarbhaumik/cli-coffee/releases/tag/v0.1.0

@@ -1,6 +1,6 @@
 [project]
 name = "cli-coffee"
-version = "0.1.0"
+version = "0.2.0"
 description = "Keep an Apple Silicon Mac awake, with style — a live machine, network, battery and clock dashboard."
 readme = "README.md"
 license = "MIT"

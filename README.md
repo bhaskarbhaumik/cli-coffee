@@ -44,7 +44,7 @@ Requires macOS on Apple Silicon, Python 3.14+ and [uv](https://docs.astral.sh/uv
 ## Use
 
 ```sh
-coffee                            # the live dashboard — press any key to quit
+coffee                            # the live dashboard — r refresh · q/Esc quit · any other key for help
 coffee run --tz UTC               # …on a different timezone
 coffee run --no-caffeinate        # …without holding the machine awake
 
@@ -61,6 +61,20 @@ coffee doctor                     # check escalation, tooling and configuration
 coffee theme                      # which palette is active, and a preview
 coffee config init                # write ~/.config/coffee/config.toml
 ```
+
+### Hotkeys
+
+While the dashboard is running:
+
+| key           | does                                                  |
+| ------------- | ----------------------------------------------------- |
+| `r` / `R`     | refresh every panel now, bypassing the caches         |
+| `q` / `Q`     | quit                                                  |
+| `Esc`         | close the hotkey help if it is open; otherwise quit   |
+| anything else | float a hotkey help popup over the panels             |
+
+`Ctrl-C` still quits too. With no popup open, the display is exactly what it
+always was.
 
 Every sub-command accepts `--dry-run`, so you can see exactly which privileged
 commands would run before letting them:
