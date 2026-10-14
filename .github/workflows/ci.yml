@@ -26,12 +26,15 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
+          # No uv.lock here — this project is a member of a uv workspace
+          # whose lock lives one level up and is not vendored.
+          cache-dependency-glob: pyproject.toml
 
       - name: ruff check
         run: uv run --no-project --with ${{ env.RUFF }} ruff check src/coffee tests scripts
@@ -51,12 +54,15 @@ jobs:
     # and the smoke run only mean anything on a real macOS runner.
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
+          # No uv.lock here — this project is a member of a uv workspace
+          # whose lock lives one level up and is not vendored.
+          cache-dependency-glob: pyproject.toml
 
       - name: Install Python ${{ env.PYTHON_VERSION }}
         run: uv python install ${{ env.PYTHON_VERSION }}
@@ -88,7 +94,7 @@ jobs:
           "$HOME/.local/bin/coffee" show --rows > /dev/null
 
       - name: Upload artefacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/*

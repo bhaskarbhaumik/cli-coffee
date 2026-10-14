@@ -23,6 +23,8 @@ surface and the rendered display, not the Python modules.
 - `claude` and `claude-code-review` workflows, for `@claude` mentions on issues
   and pull requests and for automated review of incoming changes.
 - Dependabot, keeping GitHub Actions and Python dependencies current.
+- Secret scanning with push protection, Dependabot security updates and
+  private vulnerability reporting, enabled on the repository.
 - `.editorconfig` and a `.pre-commit-config.yaml` running ruff plus the usual
   whitespace and syntax hooks.
 - `CITATION.cff`, so the repository can be cited.
